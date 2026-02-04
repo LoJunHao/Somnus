@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Somnus | Premium Sleep Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, #020617);
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .cycle-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .cycle-card:hover {
+            transform: translateY(-4px);
+            background: rgba(79, 70, 229, 0.2);
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+
+        .active-tab {
+            background: #4f46e5;
+            color: white;
+            box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.39);
+        }
+
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+</head>
+<body class="text-slate-200 p-4 md:p-8">
+
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <header class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-500/20">
+                    <i data-lucide="moon" class="text-white w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight text-white">Somnus</h1>
+                    <p class="text-xs text-slate-400 uppercase tracking-widest font-semibold">Sleep Engineering</p>
+                </div>
+            </div>
+            <button id="infoBtn" class="p-2 text-slate-400 hover:text-white transition-colors">
+                <i data-lucide="info" class="w-5 h-5"></i>
+            </button>
+        </header>
+
+        <!-- Main Navigation Tabs -->
+        <nav class="flex bg-slate-900/50 p-1.5 rounded-2xl mb-8 border border-slate-800">
+            <button onclick="switchTab('wake')" id="tab-wake" class="flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all active-tab">
+                Wake Up
+            </button>
+            <button onclick="switchTab('sleep')" id="tab-sleep" class="flex-1 py-3 px-4 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-all">
+                Sleep Now
+            </button>
+            <button onclick="switchTab('nap')" id="tab-nap" class="flex-1 py-3 px-4 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-all">
+                Power Nap
+            </button>
+        </nav>
+
+        <!-- Config Section -->
+        <section id="configPanel" class="glass-card rounded-3xl p-6 mb-8">
+            <!-- Wake Up Time Input -->
+            <div id="wakeInputGroup" class="mb-6">
+                <label class="block text-sm font-medium text-slate-400 mb-3">I want to wake up at:</label>
+                <input type="time" id="targetTime" value="07:00" class="w-full bg-slate-800/50 border border-slate-700 rounded-2xl px-6 py-4 text-3xl font-bold text-center text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+            </div>
+
+            <!-- Latency Slider -->
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <label class="text-sm font-medium text-slate-400">Time to fall asleep (Latency)</label>
+                    <span id="latencyValue" class="text-sm font-bold text-indigo-400 bg-indigo-400/10 px-3 py-1 rounded-full">15 mins</span>
+                </div>
+                <input type="range" id="latencySlider" min="0" max="60" step="5" value="15" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                <div class="flex justify-between text-[10px] text-slate-500 uppercase font-bold tracking-tighter">
+                    <span>Instant</span>
+                    <span>Average</span>
+                    <span>Insomniac</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dynamic Results Section -->
+        <div id="resultsArea">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-white" id="resultsTitle">Suggested Bedtimes</h3>
+                <span class="text-xs text-slate-500 italic">Ending the cycle naturally</span>
+            </div>
+
+            <div id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Cards injected by JS -->
+            </div>
+        </div>
+
+        <!-- Insights Footer -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="glass-card rounded-2xl p-5 border-l-4 border-l-amber-500">
+                <div class="flex items-center gap-3 mb-2">
+                    <i data-lucide="coffee" class="text-amber-500 w-5 h-5"></i>
+                    <h4 class="font-bold text-white text-sm">Coffee Curfew</h4>
+                </div>
+                <p id="coffeeCurfew" class="text-xs text-slate-400">Stop caffeine by <span class="font-bold text-slate-200">2:00 PM</span> for peak melatonin.</p>
+            </div>
+            <div class="glass-card rounded-2xl p-5 border-l-4 border-l-indigo-500">
+                <div class="flex items-center gap-3 mb-2">
+                    <i data-lucide="sun" class="text-indigo-500 w-5 h-5"></i>
+                    <h4 class="font-bold text-white text-sm">Morning Anchor</h4>
+                </div>
+                <p id="sunlightTip" class="text-xs text-slate-400">View natural light within <span class="font-bold text-slate-200">30 mins</span> of waking.</p>
+            </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <p class="text-[10px] text-slate-600 text-center mt-8 uppercase tracking-widest leading-relaxed">
+            The 90-minute cycle is a heuristic. Listen to your body. <br>
+            Not a substitute for professional medical advice.
+        </p>
+    </div>
+
+    <!-- Modal for Info -->
+    <div id="infoModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="glass-card w-full max-w-md rounded-3xl p-8 border border-white/10 shadow-2xl">
+            <h2 class="text-xl font-bold text-white mb-4">The Science of 90 Minutes</h2>
+            <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                Human sleep occurs in cycles. Each cycle lasts roughly 90 minutes. Waking up in the middle of a deep sleep cycle causes "Sleep Inertia"—that groggy, exhausted feeling. Somnus calculates the exact moment your cycle finishes so you wake up feeling refreshed and alert.
+            </p>
+            <button id="closeModal" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl transition-all">Got it</button>
+        </div>
+    </div>
+
+    <script>
+        // State Management
+        let currentMode = 'wake'; // 'wake', 'sleep', 'nap'
+        const CYCLE_MINS = 90;
+        
+        // DOM Elements
+        const targetTimeInput = document.getElementById('targetTime');
+        const latencySlider = document.getElementById('latencySlider');
+        const latencyValue = document.getElementById('latencyValue');
+        const resultsGrid = document.getElementById('resultsGrid');
+        const resultsTitle = document.getElementById('resultsTitle');
+        const wakeInputGroup = document.getElementById('wakeInputGroup');
+        const infoModal = document.getElementById('infoModal');
+
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Event Listeners
+        targetTimeInput.addEventListener('input', calculate);
+        latencySlider.addEventListener('input', (e) => {
+            latencyValue.textContent = `${e.target.value} mins`;
+            calculate();
+        });
+
+        document.getElementById('infoBtn').onclick = () => infoModal.style.display = 'flex';
+        document.getElementById('closeModal').onclick = () => infoModal.style.display = 'none';
+
+        function switchTab(mode) {
+            currentMode = mode;
+            
+            // UI Update
+            ['wake', 'sleep', 'nap'].forEach(m => {
+                const btn = document.getElementById(`tab-${m}`);
+                if (m === mode) {
+                    btn.classList.add('active-tab');
+                    btn.classList.remove('text-slate-400');
+                } else {
+                    btn.classList.remove('active-tab');
+                    btn.classList.add('text-slate-400');
+                }
+            });
+
+            if (mode === 'wake') {
+                wakeInputGroup.style.display = 'block';
+                resultsTitle.textContent = 'Suggested Bedtimes';
+            } else if (mode === 'sleep') {
+                wakeInputGroup.style.display = 'none';
+                resultsTitle.textContent = 'Ideal Wake-up Times';
+            } else {
+                wakeInputGroup.style.display = 'none';
+                resultsTitle.textContent = 'Scientific Naps';
+            }
+
+            calculate();
+        }
+
+        function calculate() {
+            const latency = parseInt(latencySlider.value);
+            resultsGrid.innerHTML = '';
+
+            if (currentMode === 'wake') {
+                calculateWakeUp(latency);
+            } else if (currentMode === 'sleep') {
+                calculateSleepNow(latency);
+            } else if (currentMode === 'nap') {
+                calculateNaps();
+            }
+        }
+
+        function calculateWakeUp(latency) {
+            const [hours, mins] = targetTimeInput.value.split(':').map(Number);
+            let wakeDate = new Date();
+            wakeDate.setHours(hours, mins, 0, 0);
+
+            // Calculate Coffee Curfew (10 hours before wake up roughly, or rather 8 hours before typical bedtime)
+            // Let's do 10 hours before the optimal (5-6 cycle) bedtime
+            const optimalBedtime = new Date(wakeDate.getTime() - (5 * CYCLE_MINS * 60000) - (latency * 60000));
+            const curfewTime = new Date(optimalBedtime.getTime() - (8 * 60 * 60000));
+            document.getElementById('coffeeCurfew').innerHTML = `Stop caffeine by <span class="font-bold text-slate-200">${formatTime(curfewTime)}</span> for peak melatonin.`;
+
+            // Cycles: 6, 5, 4, 3
+            [6, 5, 4, 3].forEach(cycles => {
+                const totalMins = (cycles * CYCLE_MINS) + latency;
+                const bedtime = new Date(wakeDate.getTime() - (totalMins * 60000));
+                
+                const score = cycles === 5 || cycles === 6 ? 'Optimal' : (cycles === 4 ? 'Good' : 'Barely Enough');
+                const colorClass = cycles >= 5 ? 'text-emerald-400' : (cycles === 4 ? 'text-amber-400' : 'text-rose-400');
+                
+                createCard(formatTime(bedtime), `${cycles} Cycles (${(cycles * 1.5).toFixed(1)}h)`, score, colorClass);
+            });
+        }
+
+        function calculateSleepNow(latency) {
+            const now = new Date();
+            
+            [3, 4, 5, 6].forEach(cycles => {
+                const totalMins = (cycles * CYCLE_MINS) + latency;
+                const wakeTime = new Date(now.getTime() + (totalMins * 60000));
+                
+                const score = cycles === 5 || cycles === 6 ? 'Optimal' : (cycles === 4 ? 'Good' : 'Barely Enough');
+                const colorClass = cycles >= 5 ? 'text-emerald-400' : (cycles === 4 ? 'text-amber-400' : 'text-rose-400');
+                
+                createCard(formatTime(wakeTime), `${cycles} Cycles (${(cycles * 1.5).toFixed(1)}h)`, score, colorClass);
+            });
+        }
+
+        function calculateNaps() {
+            const now = new Date();
+            
+            // Power Nap (20m)
+            const powerNap = new Date(now.getTime() + (20 * 60000));
+            createCard(formatTime(powerNap), "Power Nap", "Alertness Boost", "text-sky-400");
+            
+            // NASA Nap (26m)
+            const nasaNap = new Date(now.getTime() + (26 * 60000));
+            createCard(formatTime(nasaNap), "NASA Nap", "Memory & Performance", "text-indigo-400");
+            
+            // Full Cycle (90m)
+            const cycleNap = new Date(now.getTime() + (90 * 60000));
+            createCard(formatTime(cycleNap), "Full Cycle", "Creativity & REM", "text-violet-400");
+        }
+
+        function createCard(time, subtitle, label, colorClass) {
+            const div = document.createElement('div');
+            div.className = 'cycle-card glass-card rounded-2xl p-5 flex flex-col justify-between cursor-pointer';
+            div.innerHTML = `
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">${subtitle}</span>
+                    <h4 class="text-3xl font-bold text-white my-1">${time}</h4>
+                </div>
+                <div class="flex items-center gap-2 mt-2">
+                    <div class="w-1.5 h-1.5 rounded-full bg-current ${colorClass}"></div>
+                    <span class="text-xs font-semibold ${colorClass}">${label}</span>
+                </div>
+            `;
+            
+            div.onclick = () => {
+                // Feature: Quick copy time
+                const el = document.createElement('textarea');
+                el.value = `My alarm is set for ${time}`;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                
+                const originalContent = div.innerHTML;
+                div.innerHTML = `<div class="flex items-center justify-center h-full"><span class="text-xs font-bold text-indigo-400 uppercase">Alarm set! (Copied)</span></div>`;
+                setTimeout(() => div.innerHTML = originalContent, 2000);
+            };
+
+            resultsGrid.appendChild(div);
+        }
+
+        function formatTime(date) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+
+        // Initial Run
+        calculate();
+
+    </script>
+</body>
+</html>
+
